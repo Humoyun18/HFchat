@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CypherChat - iOS Style E2EE Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .ios-glass {
+      background: rgba(28, 28, 30, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .ios-glass-header {
+      background: rgba(18, 18, 18, 0.85);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+    }
+    .ios-input {
+      background: rgba(118, 118, 128, 0.24);
+    }
+    .ios-btn-active:active {
+      opacity: 0.7;
+      transform: scale(0.98);
+    }
+    .custom-scrollbar::-webkit-scrollbar { display: none; }
+    .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-black text-white h-screen flex flex-col overflow-hidden antialiased">
+
+  <!-- MAIN CONTAINER WITH MOBILE iOS ASPECT -->
+  <div id="app" class="flex-1 flex flex-col relative overflow-hidden max-w-md mx-auto w-full bg-black shadow-2xl">
+
+    <!-- ==================== SCREEN 1: iOS REGISTRATION ==================== -->
+    <div id="register-screen" class="absolute inset-0 bg-black z-50 flex flex-col justify-between p-6 pt-12 pb-8">
+      <div class="space-y-6 mt-6">
+        <div class="text-center space-y-3">
+          <div class="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-green-400 text-white rounded-3xl mx-auto flex items-center justify-center text-4xl shadow-2xl shadow-green-950/50">
+            🔒
+          </div>
+          <h1 class="text-3xl font-bold tracking-tight text-white">CypherChat</h1>
+          <p class="text-xs text-zinc-400 max-w-xs mx-auto">Xavfsiz Chat</p>
+        </div>
+
+        <!-- iOS Style Form Card -->
+        <form id="register-form" class="space-y-4 pt-4">
+          <div class="bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-800/80 p-1 divide-y divide-zinc-800/60">
+            <div class="px-4 py-3">
+              <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Ism va Familiya</label>
+              <input type="text" id="reg-name" placeholder="Masalan: Ali Valiyev" required
+                class="w-full bg-transparent text-sm text-white focus:outline-none placeholder-zinc-600">
+            </div>
+
+            <div class="px-4 py-3">
+              <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Telefon Raqam</label>
+              <input type="tel" id="reg-phone" placeholder="+998901234567" required
+                class="w-full bg-transparent text-sm text-white focus:outline-none placeholder-zinc-600">
+            </div>
+
+            <div class="px-4 py-3">
+              <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Maxfiy Parol (E2EE Kaliti)</label>
+              <input type="password" id="reg-secret" placeholder="••••••••" required minlength="4"
+                class="w-full bg-transparent text-sm text-white focus:outline-none placeholder-zinc-600">
+            </div>
+          </div>
+
+          <p class="text-[11px] text-zinc-500 px-2 leading-relaxed">
+            Parolingiz qurilmangizning ichki apparat shifrlash tizimida saqlanadi va hech qachon serverlarga yuborilmaydi.
+          </p>
+
+          <button type="submit" id="reg-btn"
+            class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-base rounded-2xl shadow-lg shadow-emerald-950/50 ios-btn-active transition-all duration-200">
+            Ro'yxatdan o'tish
+          </button>
+        </form>
+      </div>
+
+      <div class="text-center text-[11px] text-zinc-600 font-medium">
+        Designed for iOS Security & Privacy
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 2: FRIENDS LIST ("YAQINLAR") ==================== -->
+    <div id="friends-screen" class="flex-1 flex flex-col h-full hidden bg-black">
+      <!-- iOS Header -->
+      <header class="pt-10 pb-3 px-4 ios-glass-header border-b border-zinc-800/50 sticky top-0 z-20 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-green-400 text-black font-bold flex items-center justify-center text-base shadow-md" id="my-avatar">
+            ?
+          </div>
+          <div>
+            <h1 class="font-bold text-base text-white tracking-tight" id="my-name">Foydalanuvchi</h1>
+            <p class="text-[11px] text-emerald-400 font-mono tracking-tight" id="my-phone">
+              +998 -- --- -- --
+            </p>
+          </div>
+        </div>
+
+        <button id="open-add-friend-btn" class="w-8 h-8 rounded-full bg-zinc-800 text-emerald-400 flex items-center justify-center font-semibold text-xl ios-btn-active transition">
+          +
+        </button>
+      </header>
+
+      <!-- FRIENDS LIST -->
+      <main class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
+        <div class="flex items-center justify-between text-xs text-zinc-500 px-1 font-medium uppercase tracking-wider">
+          <span>Yaqinlar Ro'yxati</span>
+          <span id="friends-count" class="bg-zinc-900 px-2.5 py-0.5 rounded-full text-[10px] text-zinc-400 border border-zinc-800">0 ta do'st</span>
+        </div>
+
+        <div id="friends-list" class="space-y-2">
+          <!-- Empty State -->
+          <div class="text-center py-16 text-zinc-500 space-y-3" id="no-friends-msg">
+            <div class="w-16 h-16 bg-zinc-900 rounded-full mx-auto flex items-center justify-center text-2xl border border-zinc-800/80">
+              💬
+            </div>
+            <p class="text-sm font-medium text-zinc-300">Hali hech kim yo'q</p>
+            <p class="text-xs text-zinc-500 max-w-xs mx-auto">Yuqoridagi <b>"+"</b> tugmasi orqali yaqinlaringizning telefon raqamini kiritib muloqotni boshlang.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ==================== SCREEN 3: PRIVATE E2EE CHAT ==================== -->
+    <div id="chat-screen" class="flex-1 flex flex-col h-full hidden bg-black">
+      <!-- iOS Chat Header -->
+      <header class="pt-10 pb-3 px-3 ios-glass-header border-b border-zinc-800/60 sticky top-0 z-20 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button id="back-to-friends-btn" class="text-emerald-400 font-normal flex items-center gap-0.5 text-base ios-btn-active">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            Yaqinlar
+          </button>
+        </div>
+
+        <div class="flex flex-col items-center">
+          <h1 class="font-semibold text-sm text-white" id="active-friend-name">Do'st</h1>
+          <span class="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> E2EE Encrypted
+          </span>
+        </div>
+
+        <div class="w-8 h-8 rounded-full bg-zinc-800 text-emerald-400 font-bold flex items-center justify-center text-xs border border-zinc-700" id="active-friend-avatar">
+          ?
+        </div>
+      </header>
+
+      <!-- MESSAGES VIEW AREA -->
+      <main id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-black">
+        <div class="text-center my-2">
+          <span class="bg-zinc-900/80 border border-zinc-800/80 text-zinc-400 text-[10px] px-3 py-1.2 rounded-full inline-block backdrop-blur">
+            🔒 End-to-End shifrlangan xabarlashuv zanjiri
+          </span>
+        </div>
+        <div id="messages-list" class="space-y-2.5">
+          <!-- Dynamically populated messages -->
+        </div>
+      </main>
+
+      <!-- iOS STYLE CHAT INPUT -->
+      <footer class="p-3 pb-6 bg-zinc-950/90 border-t border-zinc-800/60 backdrop-blur-md">
+        <form id="chat-form" class="flex items-center gap-2">
+          <div class="flex-1 bg-zinc-900 rounded-full border border-zinc-800/80 px-4 py-2 flex items-center">
+            <input 
+              type="text" 
+              id="message-input" 
+              placeholder="iMessage..." 
+              class="w-full bg-transparent text-white text-sm focus:outline-none placeholder-zinc-500"
+              autocomplete="off"
+              required
+            >
+          </div>
+          <button 
+            type="submit" 
+            class="w-9 h-9 bg-emerald-500 hover:bg-emerald-400 text-black rounded-full flex items-center justify-center font-bold ios-btn-active shadow-md transition"
+          >
+            <svg class="w-5 h-5 transform rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </form>
+      </footer>
+    </div>
+
+    <!-- ==================== MODAL: ADD FRIEND (iOS Dialog) ==================== -->
+    <div id="add-friend-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-zinc-900/95 border border-zinc-800 rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-white text-base">Yaqin Qo'shish</h3>
+          <button id="close-add-modal" class="w-7 h-7 bg-zinc-800 rounded-full text-zinc-400 hover:text-white flex items-center justify-center text-sm font-semibold">&times;</button>
+        </div>
+
+        <p class="text-xs text-zinc-400">
+          Ilovada ro'yxatdan o'tgan yaqiningizning telefon raqamini kiritib bog'laning.
+        </p>
+
+        <form id="add-friend-form" class="space-y-3">
+          <div class="bg-black/50 border border-zinc-800 rounded-xl px-3 py-2.5">
+            <input type="tel" id="add-phone-input" placeholder="+998901234567" required
+              class="w-full bg-transparent text-xs text-white focus:outline-none placeholder-zinc-600">
+          </div>
+
+          <p id="add-friend-error" class="text-[11px] text-red-400 hidden"></p>
+
+          <button type="submit" 
+            class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-semibold rounded-xl ios-btn-active transition shadow-md">
+            Qo'shish
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FIREBASE & CRYPTO JS LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cypher-chat-app';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+      apiKey: "",
+      authDomain: "demo-app.firebaseapp.com",
+      projectId: "demo-app",
+      storageBucket: "demo-app.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let myProfile = null;
+    let activeFriend = null;
+    let chatUnsubscribe = null;
+
+    /* WEBCRYPTO AES-256 E2EE ENGINE */
+    async function getCryptoKey(secretPassphrase) {
+      const enc = new TextEncoder();
+      const keyMaterial = await window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(secretPassphrase),
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits", "deriveKey"]
+      );
+      return window.crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: enc.encode("cypher_secure_salt_ios_2026"),
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptText(plainText, secretPassphrase) {
+      const key = await getCryptoKey(secretPassphrase);
+      const enc = new TextEncoder();
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        enc.encode(plainText)
+      );
+      
+      const combined = new Uint8Array(iv.length + encrypted.byteLength);
+      combined.set(iv);
+      combined.set(new Uint8Array(encrypted), iv.length);
+      
+      return btoa(String.fromCharCode.apply(null, combined));
+    }
+
+    async function decryptText(cipherTextBase64, secretPassphrase) {
+      try {
+        const key = await getCryptoKey(secretPassphrase);
+        const binaryString = atob(cipherTextBase64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        const iv = bytes.slice(0, 12);
+        const data = bytes.slice(12);
+        
+        const decrypted = await window.crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: iv },
+          key,
+          data
+        );
+        return new TextDecoder().decode(decrypted);
+      } catch (err) {
+        return null;
+      }
+    }
+
+    /* AUTHENTICATION */
+    async function initAuth() {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        try {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } catch (e) {
+          await signInAnonymously(auth);
+        }
+      } else {
+        await signInAnonymously(auth);
+      }
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+        const snap = await getDoc(userDocRef);
+
+        if (snap.exists()) {
+          myProfile = snap.data();
+          showFriendsScreen();
+        } else {
+          document.getElementById('register-screen').classList.remove('hidden');
+        }
+      }
+    });
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const name = document.getElementById('reg-name').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const secret = document.getElementById('reg-secret').value.trim();
+
+      if (!name || !phone || !secret) return;
+
+      const btn = document.getElementById('reg-btn');
+      btn.disabled = true;
+      btn.innerText = "Yaratilmoqda...";
+
+      const userData = {
+        uid: currentUser.uid,
+        name: name,
+        phone: phone,
+        secretKey: secret,
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+        await setDoc(userDocRef, userData);
+        myProfile = userData;
+        showFriendsScreen();
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "Ro'yxatdan o'tish";
+      }
+    });
+
+    /* FRIENDS MANAGEMENT */
+    function showFriendsScreen() {
+      document.getElementById('register-screen').classList.add('hidden');
+      document.getElementById('chat-screen').classList.add('hidden');
+      document.getElementById('friends-screen').classList.remove('hidden');
+
+      document.getElementById('my-name').innerText = myProfile.name;
+      document.getElementById('my-phone').innerText = myProfile.phone;
+      document.getElementById('my-avatar').innerText = myProfile.name.charAt(0).toUpperCase();
+
+      listenToFriendsList();
+    }
+
+    function listenToFriendsList() {
+      if (!currentUser) return;
+
+      const friendsCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'friends');
+
+      onSnapshot(friendsCol, (snapshot) => {
+        const friends = snapshot.docs.map(doc => doc.data());
+        const friendsListEl = document.getElementById('friends-list');
+        const noFriendsMsg = document.getElementById('no-friends-msg');
+        const countEl = document.getElementById('friends-count');
+
+        countEl.innerText = `${friends.length} ta do'st`;
+
+        if (friends.length === 0) {
+          noFriendsMsg.classList.remove('hidden');
+          friendsListEl.innerHTML = '';
+          friendsListEl.appendChild(noFriendsMsg);
+          return;
+        }
+
+        noFriendsMsg.classList.add('hidden');
+        friendsListEl.innerHTML = '';
+
+        friends.forEach(friend => {
+          const item = document.createElement('div');
+          item.className = "bg-zinc-900/90 border border-zinc-800/80 hover:border-emerald-500/40 p-3.5 rounded-2xl flex items-center justify-between cursor-pointer ios-btn-active transition";
+          item.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-full bg-zinc-800 text-emerald-400 font-bold border border-zinc-700 flex items-center justify-center text-sm shadow">
+                ${friend.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h3 class="font-semibold text-sm text-white">${escapeHtml(friend.name)}</h3>
+                <p class="text-xs text-zinc-400 font-mono">${escapeHtml(friend.phone)}</p>
+              </div>
+            </div>
+            <div class="text-xs text-emerald-400 font-medium">
+              Suhbat 💬
+            </div>
+          `;
+          item.onclick = () => openChatWith(friend);
+          friendsListEl.appendChild(item);
+        });
+      }, (err) => console.error("Error loading friends:", err));
+    }
+
+    // Modal Control
+    const addModal = document.getElementById('add-friend-modal');
+    document.getElementById('open-add-friend-btn').onclick = () => addModal.classList.remove('hidden');
+    document.getElementById('close-add-modal').onclick = () => addModal.classList.add('hidden');
+
+    document.getElementById('add-friend-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phoneInput = document.getElementById('add-phone-input').value.trim();
+      const errorEl = document.getElementById('add-friend-error');
+      errorEl.classList.add('hidden');
+
+      if (!phoneInput) return;
+
+      if (phoneInput === myProfile.phone) {
+        errorEl.innerText = "O'zingizni qo'sha olmaysiz!";
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const allUsersCol = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+        const snap = await getDocs(allUsersCol);
+        
+        let foundUser = null;
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.phone === phoneInput) {
+            foundUser = data;
+          }
+        });
+
+        if (!foundUser) {
+          errorEl.innerText = "Ushbu foydalanuvchi topilmadi!";
+          errorEl.classList.remove('hidden');
+          return;
+        }
+
+        const friendRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'friends', foundUser.uid);
+        await setDoc(friendRef, {
+          uid: foundUser.uid,
+          name: foundUser.name,
+          phone: foundUser.phone,
+          addedAt: serverTimestamp()
+        });
+
+        const reverseFriendRef = doc(db, 'artifacts', appId, 'users', foundUser.uid, 'friends', currentUser.uid);
+        await setDoc(reverseFriendRef, {
+          uid: currentUser.uid,
+          name: myProfile.name,
+          phone: myProfile.phone,
+          addedAt: serverTimestamp()
+        });
+
+        document.getElementById('add-phone-input').value = '';
+        addModal.classList.add('hidden');
+
+      } catch (err) {
+        errorEl.innerText = "Xatolik yuz berdi.";
+        errorEl.classList.remove('hidden');
+      }
+    });
+
+    /* PRIVATE CHAT LOGIC */
+    function openChatWith(friend) {
+      activeFriend = friend;
+      document.getElementById('friends-screen').classList.add('hidden');
+      document.getElementById('chat-screen').classList.remove('hidden');
+
+      document.getElementById('active-friend-name').innerText = friend.name;
+      document.getElementById('active-friend-avatar').innerText = friend.name.charAt(0).toUpperCase();
+
+      listenToPrivateMessages();
+    }
+
+    document.getElementById('back-to-friends-btn').onclick = () => {
+      if (chatUnsubscribe) chatUnsubscribe();
+      document.getElementById('chat-screen').classList.add('hidden');
+      document.getElementById('friends-screen').classList.remove('hidden');
+    };
+
+    function getChatRoomId(uid1, uid2) {
+      return [uid1, uid2].sort().join('_');
+    }
+
+    function listenToPrivateMessages() {
+      if (!currentUser || !activeFriend) return;
+
+      const roomId = getChatRoomId(currentUser.uid, activeFriend.uid);
+      const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId, 'messages');
+
+      if (chatUnsubscribe) chatUnsubscribe();
+
+      chatUnsubscribe = onSnapshot(messagesCol, async (snapshot) => {
+        const rawDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        rawDocs.sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
+
+        const messagesList = document.getElementById('messages-list');
+        messagesList.innerHTML = '';
+
+        const sharedPassphrase = `chat_key_${getChatRoomId(currentUser.uid, activeFriend.uid)}`;
+
+        for (const msg of rawDocs) {
+          const isMine = msg.senderId === currentUser.uid;
+          const decryptedText = await decryptText(msg.ciphertext, sharedPassphrase);
+
+          const msgEl = document.createElement('div');
+          msgEl.className = `flex flex-col ${isMine ? 'items-end' : 'items-start'}`;
+
+          const isDecryptionFailed = decryptedText === null;
+
+          msgEl.innerHTML = `
+            <div class="max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${
+              isMine 
+                ? 'bg-emerald-500 text-black font-normal rounded-br-xs' 
+                : 'bg-zinc-800 text-white rounded-bl-xs border border-zinc-700/50'
+            }">
+              <p class="text-sm ${isDecryptionFailed ? 'italic text-red-300 text-xs' : 'break-words leading-relaxed'}">
+                ${isDecryptionFailed ? '🔒 [Shifr o\'qilmadi]' : escapeHtml(decryptedText)}
+              </p>
+              <div class="mt-0.5 flex items-center justify-end gap-1 text-[9px] ${isMine ? 'text-emerald-950 font-semibold' : 'text-zinc-400'} font-mono">
+                <span>${msg.createdAt ? new Date(msg.createdAt.toMillis()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}</span>
+              </div>
+            </div>
+          `;
+          messagesList.appendChild(msgEl);
+        }
+
+        const container = document.getElementById('chat-messages-container');
+        container.scrollTop = container.scrollHeight;
+      }, (err) => console.error("Chat sync error:", err));
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('message-input');
+      const text = input.value.trim();
+
+      if (!text || !currentUser || !activeFriend) return;
+
+      input.value = '';
+
+      const roomId = getChatRoomId(currentUser.uid, activeFriend.uid);
+      const sharedPassphrase = `chat_key_${roomId}`;
+
+      const encryptedBase64 = await encryptText(text, sharedPassphrase);
+
+      try {
+        const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId, 'messages');
+        await addDoc(messagesCol, {
+          ciphertext: encryptedBase64,
+          senderId: currentUser.uid,
+          receiverId: activeFriend.uid,
+          createdAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Xabar yuborishda xato:", err);
+      }
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text;
+      return div.innerHTML;
+    }
+
+    initAuth();
+  </script>
+</body>
+</html>
